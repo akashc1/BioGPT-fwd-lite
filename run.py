@@ -1,21 +1,16 @@
-import sys
 import argparse
-import torch
+import sys
 from pathlib import Path
-from transformers import BioGptTokenizer, BioGptForCausalLM, set_seed
+
+import torch
+from transformers import BioGptForCausalLM, BioGptTokenizer, set_seed
 from transformers.tokenization_utils_base import BatchEncoding
 
 
 def parse_args():
     p = argparse.ArgumentParser()
-    # p.add_argument(
-    #     '-m', '--model-path',
-    #     type=Path,
-    #     default=Path('/home/akashc/almanac/checkpoints/QA-PubMedQA-BioGPT/checkpoint_avg.pt'),
-    #     help='Path to model to use',
-    # )
     p.add_argument(
-        '-t', '--text-path', type=Path, default=None,
+        '-t', '--text-path', type=Path, required=True,
         help='File containing text prompts (split by newlines)',
     )
     p.add_argument(
@@ -41,10 +36,7 @@ def recursively_to_cuda(inp):
 
 
 def get_inputs(args: argparse.Namespace):
-    if args.text_path:
-        return [l.strip() for l in args.text_path.read_text().splitlines()]
-
-    return [l.strip() for l in sys.stdin.read().splitlines()]
+    return [l.strip() for l in args.text_path.read_text().splitlines()]
 
 
 def prepare_input_sentence(sent: str):
@@ -63,20 +55,7 @@ def prepare_input_sentence(sent: str):
     return sent
 
 
-
 def main(args: argparse.Namespace):
-    # m = TransformerLanguageModelPrompt.from_pretrained(
-    #     str(args.model_path.parent),
-    #     str(args.model_path.name),
-    #     '',
-    #     max_len_b=args.decoding_length,
-    #     max_tokens=12000,
-    # )
-    # print(f"{m.cfg=}")
-
-    # if m.cfg.common.fp16:
-    #     print("Converting model to fp16")
-    #     m.half()
 
     tokenizer = BioGptTokenizer.from_pretrained('microsoft/BioGPT-Large-PubMedQA')
     m = BioGptForCausalLM.from_pretrained('microsoft/BioGPT-Large-PubMedQA')
@@ -99,6 +78,7 @@ def main(args: argparse.Namespace):
         with open(args.output_path, 'w') as f:
             f.write('\n'.join(outputs))
     else:
+        print("Outputs:")
         for out in outputs:
             print(out)
 
